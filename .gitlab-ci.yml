@@ -1,0 +1,61 @@
+# GitLab CI for Vista-UMAD -- manual GPU jobs for the edward server (2x A40).
+#
+# This is a TEMPLATE. Before it runs you must:
+#   1. Push this repo to GitLab.
+#   2. Have a GitLab runner registered on the edward server, and put its tag in
+#      RUNNER_TAG below (replace "edward").
+#   3. Make sure PYTHON below points at an interpreter on the runner that has the
+#      project dependencies (torch / torchvision / kornia). The repo ships one at
+#      external/Vista/.venv -- if the runner clones fresh, recreate it or point
+#      PYTHON at a shared interpreter.
+#
+# Resource confinement (the point of the server docs): CUDA_VISIBLE_DEVICES and
+# the thread caps are declared as `variables`, so GitLab exports them into the
+# environment *before* Python starts -- the correct place to confine a process.
+# Edit GPU_ID to choose the card: 0 = first A40, 1 = second A40.
+
+variables:
+  GPU_ID: "0"                       # which A40: 0 or 1
+  CUDA_VISIBLE_DEVICES: "$GPU_ID"   # PyTorch reads this when CUDA initializes
+  CPU_THREADS: "4"                  # match your CPU reservation on edward
+  OMP_NUM_THREADS: "$CPU_THREADS"
+  MKL_NUM_THREADS: "$CPU_THREADS"
+  OPENBLAS_NUM_THREADS: "$CPU_THREADS"
+  PYTHON: "external/Vista/.venv/bin/python"   # TODO: confirm on your runner
+
+stages:
+  - test
+  - demo
+
+# Shared settings for every job that touches the GPU.
+.edward_gpu:
+  tags:
+    - edward          # TODO: replace with your runner's tag
+  rules:
+    - when: manual    # never auto-run on a shared server; trigger by hand
+  interruptible: true
+  before_script:
+    - echo "GPU=$CUDA_VISIBLE_DEVICES  CPU_THREADS=$CPU_THREADS"
+    - nvidia-smi || true
+
+phase3-tests:
+  extends: .edward_gpu
+  stage: test
+  timeout: 20m
+  script:
+    - $PYTHON tests/test_metrics.py
+
+phase3-demo:
+  extends: .edward_gpu
+  stage: demo
+  timeout: 30m
+  script:
+    # --gpu is omitted on purpose: CUDA_VISIBLE_DEVICES (set above) already
+    # confines the process. --threads mirrors the CPU reservation.
+    - $PYTHON scripts/run_phase3.py --rollout 0 --weights ssim_pd --threads $CPU_THREADS
+  artifacts:
+    name: "phase3-demo-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - outputs/phase3-demo/
+    expire_in: 2 weeks
+    when: always

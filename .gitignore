@@ -1,0 +1,80 @@
+# ---------------------------------------------------------------------------
+# Large data, model, and generated-output directories (tens of GB — not for git)
+# ---------------------------------------------------------------------------
+# Keep the top-level folders tracked (via .gitkeep) but ignore all their
+# contents. Pattern per dir: ignore everything inside, re-include the marker.
+#
+# Datasets and model checkpoints (nuScenes, CARLA/AnoVox, KITTI, CODA, SAM, etc.)
+/data/*
+!/data/.gitkeep
+# Vendored third-party repos, virtualenvs, and CARLA binaries
+/external/*
+!/external/.gitkeep
+# Generated inference results, renders, and pipeline outputs
+/outputs/*
+!/outputs/.gitkeep
+
+# ---------------------------------------------------------------------------
+# Model weights / checkpoints (safety net if any land outside the dirs above)
+# ---------------------------------------------------------------------------
+*.safetensors
+*.ckpt
+*.pth
+*.pt
+*.bin
+*.onnx
+*.pb
+*.h5
+
+# ---------------------------------------------------------------------------
+# Large array / dataset / archive formats
+# ---------------------------------------------------------------------------
+*.npy
+*.npz
+*.mat
+*.pcd
+*.ply
+*.bin.gz
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.7z
+*.rar
+
+# Unreal Engine / CARLA assets
+*.uasset
+*.uexp
+*.ubulk
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# ---------------------------------------------------------------------------
+# Editor / OS cruft
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

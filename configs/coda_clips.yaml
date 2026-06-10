@@ -1,0 +1,32 @@
+# Configuration for the CODA-clips benchmark builder (see PLAN.md).
+# All knobs live here. Sources are independently runnable: ONCE + KITTI must
+# complete with `nuscenes.enabled: false`.
+
+coda_root: data/CODA/base-val-1500      # CODA base-val-1500 (corner_case.json, images/, *_indices.json)
+out_root:  data/coda-clips              # benchmark output store
+
+target:   {width: 1024, height: 576, fps: 10}   # VISTA input geometry (16:9 landscape, 10 fps)
+context_frames: 3                                # VISTA pins 3 context frames per rollout
+horizons_s: [1.0, 2.0]                           # anchor sits this far after last context frame
+history_pool_frames: 30                          # >=25 so any horizon up to 2.2 s is supportable
+pad_color: [0, 0, 0]                             # black letterbox bars (gotcha #7: OOD for VISTA)
+
+sources:
+  once:
+    enabled: true
+    # ONCE ships the corner-case anchor images directly inside CODA (images/).
+    # The clip HISTORY needs the per-split cam03 tars from ONCE's gated hosting.
+    raw_cache: data/once_raw               # where extracted cam03/<seq>/*.jpg live, if fetched
+  kitti:
+    enabled: true
+    raw_cache: data/kitti_raw              # <date>/<drive_sync>/image_02/data/*.png after fetch
+  nuscenes:
+    enabled: true                          # CAM_FRONT keyframes+sweeps fetched to dataroot (Route A)
+    dataroot: data/nuscenes
+    mode: sweeps                           # sweeps = 12 fps (resampled to 10); keyframes = 2 Hz (too coarse)
+
+vista_repo: external/Vista
+eval:
+  k_samples: 4
+  primary_horizon_s: 1.0
+  metrics: [auroc_box, ap_box, fvd, lpips]
